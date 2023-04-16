@@ -1,19 +1,16 @@
-import { compare, hash, hashSync } from 'bcrypt';
+import { compare, compareSync, hashSync } from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserRepository } from './user.repository';
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserDocument } from './models/user.schema';
 
 @Injectable()
 export class UsersService {
-  /**
-   * create user service to access user table
-   */
   constructor(private readonly userRepository: UserRepository) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -33,7 +30,7 @@ export class UsersService {
 
   private async findByEmail(email: string): Promise<UserDocument> {
     try {
-      const user = await this.userRepository.findOne({ email });
+      const user = await this.userRepository.findOneForUser({ email });
       if (!user) {
         throw new NotFoundException(
           'user not found with email address: ' + email,
@@ -42,16 +39,27 @@ export class UsersService {
       return user;
     } catch (error) {}
   }
-  async validateUser(email: string, password: string) {
-    try {
-      const user = await this.findByEmail(email);
-      if (!user || (await compare(password, user.password))) {
-        throw new BadRequestException('user email or password incorrect!');
-      }
-      delete user.password;
-      return user;
-    } catch (error) {
-      throw new InternalServerErrorException('somethings went wrong');
+
+  async findOne(id: string): Promise<UserDocument> {
+    const user = await this.userRepository.findOne({ _id: id });
+    if (!user) {
+      throw new NotFoundException('user not found with email address: ' + id);
     }
+    return user;
+  }
+  async validateUser(email: string, password: string) {
+    const user = await this.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('user email or password incorrect!');
+    }
+    if (!compareSync(password, user.password)) {
+      throw new UnauthorizedException('user email or password incorrect!');
+    }
+    delete user.password;
+    return user;
+  }
+
+  async getAllUsers() {
+    return this.userRepository.find({});
   }
 }

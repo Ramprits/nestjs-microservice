@@ -26,6 +26,21 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     return document;
   }
 
+  async findOneForUser(
+    filterQuery: FilterQuery<TDocument>,
+  ): Promise<TDocument> {
+    const document = await this.model
+      .findOne(filterQuery, {}, { lean: true })
+      .select('password email');
+
+    if (!document) {
+      this.logger.warn('Document not found with filterQuery', filterQuery);
+      throw new NotFoundException('Document not found.');
+    }
+
+    return document;
+  }
+
   async findOneAndUpdate(
     filterQuery: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,
