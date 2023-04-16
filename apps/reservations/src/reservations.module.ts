@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
-import { LoggerModule, DatabaseModule } from '@app/common';
+import { LoggerModule, DatabaseModule, AUTH_SERVICE } from '@app/common';
 import * as Joi from 'joi';
 import { ReservationsService } from './reservations.service';
 import { ReservationsController } from './reservations.controller';
 import { ReservationsRepository } from './reservations.repository';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
   ReservationDocument,
   ReservationSchema,
 } from './model/reservation.schema';
-import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -24,6 +25,19 @@ import { ConfigModule } from '@nestjs/config';
       { name: ReservationDocument.name, schema: ReservationSchema },
     ]),
     LoggerModule,
+    ClientsModule.registerAsync([
+      {
+        name: AUTH_SERVICE,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get('AUTH_HOST'),
+            port: configService.get('AUTH_PORT'),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [ReservationsController],
   providers: [ReservationsService, ReservationsRepository],

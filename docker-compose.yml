@@ -1,17 +1,4 @@
 services:
-  reservations:
-    build:
-      context: .
-      dockerfile: ./apps/reservations/Dockerfile
-      target: development
-    command: npm run start:dev reservations
-    env_file:
-      - ./apps/reservations/.env
-    ports:
-      - '4000:3000'
-    volumes:
-      - .:/usr/src/app
-
   auth:
     build:
       context: .
@@ -21,9 +8,21 @@ services:
     env_file:
       - ./apps/auth/.env
     ports:
-      - '4100:3100'
+      - '3100:3100'
     volumes:
       - .:/usr/src/app
 
-  mongo:
-    image: mongo
+  reservations:
+    build:
+      context: .
+      dockerfile: ./apps/reservations/Dockerfile
+      target: development
+    command: npm run start:dev reservations
+    env_file:
+      - ./apps/reservations/.env
+    depends_on:
+      - auth
+    ports:
+      - '4000:3000'
+    volumes:
+      - .:/usr/src/app
