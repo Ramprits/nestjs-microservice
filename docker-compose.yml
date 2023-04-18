@@ -26,3 +26,32 @@ services:
       - '4000:3000'
     volumes:
       - .:/usr/src/app
+
+  payments:
+    build:
+      context: .
+      dockerfile: ./apps/payments/Dockerfile
+      target: development
+    command: npm run start:dev payments
+    env_file:
+      - ./apps/payments/.env
+    depends_on:
+      - auth
+      - reservations
+    volumes:
+      - .:/usr/src/app
+
+  notifications:
+    build:
+      context: .
+      dockerfile: ./apps/notifications/Dockerfile
+      target: development
+    command: npm run start:dev notifications
+    env_file:
+      - ./apps/notifications/.env
+    depends_on:
+      - auth
+      - reservations
+      - payments
+    volumes:
+      - .:/usr/src/app
